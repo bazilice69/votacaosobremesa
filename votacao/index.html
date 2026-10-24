@@ -45,7 +45,8 @@
     <div class="campeao-titulo">E A CAMPEÃ(O) É...</div>
     <!-- mascote chef do campeão (vídeo) -->
     <div class="boneco-slot" id="boneco-slot">
-      <video id="mascote-video" class="mascote-campeao" autoplay loop muted playsinline>
+      <video id="mascote-video" class="mascote-campeao" playsinline
+             onerror="this.style.display='none'">
         <source src="mascote.mp4" type="video/mp4">
       </video>
     </div>

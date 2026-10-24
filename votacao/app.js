@@ -418,8 +418,14 @@ function mostrarCampeao(c){
   ov.classList.remove("escondido");
   chuvaConfete();
   const v=document.getElementById("mascote-video");
-  if(v){ try{ v.currentTime=0; v.play(); }catch(e){} }
-  document.getElementById("campeao-fechar").onclick=()=>ov.classList.add("escondido");
+  if(v){ try{
+    v.muted=false; v.volume=1.0; v.currentTime=0; v.loop=false;
+    v.play().catch(()=>{ v.muted=true; v.play().catch(()=>{}); });
+  }catch(e){} }
+  document.getElementById("campeao-fechar").onclick=()=>{
+    ov.classList.add("escondido");
+    if(v){ try{ v.pause(); }catch(e){} }
+  };
 }
 
 function chuvaConfete(){

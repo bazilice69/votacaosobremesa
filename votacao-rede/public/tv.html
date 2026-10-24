@@ -45,6 +45,18 @@ body{background:radial-gradient(circle at 50% 20%,#7b2d4e,#2a0d1c 80%);color:#ff
 @keyframes cair{to{transform:translateY(110vh) rotate(360deg);}}
 /* mascote chef na tela do campeão */
 #boneco-slot{min-height:0;}
+/* tela de suspense "toque para revelar" */
+.revelar{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 40%,#5c1f3a,#140309 85%);cursor:pointer;}
+.revelar.off{display:none;}
+.revelar-cont{text-align:center;color:#fff;padding:24px;}
+.revelar-drum{font-size:clamp(4rem,14vw,10rem);animation:bal .7s ease-in-out infinite;}
+.revelar-tit{font-size:clamp(1.6rem,4vw,3rem);font-weight:800;margin-top:10px;}
+.revelar-sub{font-size:clamp(1rem,2.5vw,1.6rem);opacity:.85;margin:6px 0 24px;}
+.revelar-btn{max-width:420px;margin:0 auto;font-size:clamp(1.2rem,3vw,1.8rem);padding:18px 24px;
+  animation:pulsa 1.2s ease-in-out infinite;}
+.revelar-dica{margin-top:16px;opacity:.7;font-size:1rem;}
+@keyframes pulsa{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
 .mascote-campeao{
   width:clamp(160px,26vw,300px);height:auto;display:block;margin:0 auto -10px;
   filter:drop-shadow(0 12px 24px rgba(0,0,0,.45));
@@ -54,6 +66,17 @@ body{background:radial-gradient(circle at 50% 20%,#7b2d4e,#2a0d1c 80%);color:#ff
 <body>
 <div class="tv" id="tv">Carregando…</div>
 
+<!-- tela de suspense: toque para revelar (destrava o som do vídeo) -->
+<div class="revelar off" id="revelar">
+  <div class="revelar-cont">
+    <div class="revelar-drum">🥁</div>
+    <div class="revelar-tit">A votação foi encerrada!</div>
+    <div class="revelar-sub">Prepare a família…</div>
+    <button class="btn btn-dourado revelar-btn" id="btn-revelar">👑 REVELAR A CAMPEÃ(O)!</button>
+    <div class="revelar-dica">Toque aqui (ou aperte OK no controle da TV)</div>
+  </div>
+</div>
+
 <!-- overlay campeão -->
 <div class="camp off" id="camp">
   <div class="confete" id="confete"></div>
@@ -61,7 +84,7 @@ body{background:radial-gradient(circle at 50% 20%,#7b2d4e,#2a0d1c 80%);color:#ff
     <div class="camp-coroa">👑</div>
     <div class="camp-tit">E A CAMPEÃ(O) É...</div>
     <div id="boneco-slot">
-      <video id="mascote-video" class="mascote-campeao" autoplay loop muted playsinline
+      <video id="mascote-video" class="mascote-campeao" playsinline
              onerror="this.style.display='none'">
         <source src="/mascote.mp4" type="video/mp4">
       </video>
@@ -78,15 +101,35 @@ const tv=document.getElementById("tv");
 let faseAnterior=null;
 function esc(s){return String(s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 
+let campeaoCache=null;    // guarda o campeão atual
+let jaRevelou=false;      // evita reabrir a tela de revelar toda hora
+
 async function tick(){
   try{
     const r=await fetch("/api/estado");const e=await r.json();
     pintar(e);
-    if(e.fase==="encerrado") mostrarCampeao(e.ranking[0]);
-    else document.getElementById("camp").classList.add("off");
+    if(e.fase==="encerrado"){
+      campeaoCache = e.ranking[0]||null;
+      // ainda não revelou? mostra a tela de suspense (toque p/ liberar som)
+      if(!jaRevelou && campeaoCache && campeaoCache.media>0){
+        document.getElementById("revelar").classList.remove("off");
+      }
+    }else{
+      // votação reaberta/novo ano -> reseta tudo
+      jaRevelou=false;
+      document.getElementById("revelar").classList.add("off");
+      document.getElementById("camp").classList.add("off");
+    }
     faseAnterior=e.fase;
   }catch(err){ tv.innerHTML=`<div class="vazio" style="color:#fff"><span class="big">📡</span>Sem conexão com o servidor</div>`; }
 }
+
+// Botão REVELAR: este clique libera o navegador/TV a tocar o vídeo COM SOM
+document.getElementById("btn-revelar").onclick=()=>{
+  jaRevelou=true;
+  document.getElementById("revelar").classList.add("off");
+  mostrarCampeao(campeaoCache);
+};
 
 function pintar(e){
   const rank=e.ranking;
@@ -118,12 +161,20 @@ function mostrarCampeao(c){
   document.getElementById("camp-nome").textContent=c.nome;
   document.getElementById("camp-autor").textContent="por "+c.participante+(c.crianca?" 👶":"");
   document.getElementById("camp-nota").textContent="Nota "+c.media.toFixed(2)+" ⭐";
-  if(camp.classList.contains("off")){
-    camp.classList.remove("off");
-    chuva();
-    // (re)inicia o vídeo do mascote do começo quando o campeão surge
-    const v=document.getElementById("mascote-video");
-    if(v){ try{ v.currentTime=0; v.play(); }catch(e){} }
+  camp.classList.remove("off");
+  chuva();
+  // toca o vídeo do mascote COM SOM (destravado pelo clique no botão revelar)
+  const v=document.getElementById("mascote-video");
+  if(v){
+    try{
+      v.muted=false;
+      v.volume=1.0;
+      v.currentTime=0;
+      v.loop=false;          // a fala toca uma vez; depois o confete continua
+      v.play().catch(()=>{   // se o navegador recusar som, pelo menos mostra o vídeo
+        v.muted=true; v.play().catch(()=>{});
+      });
+    }catch(e){}
   }
 }
 // esconde o <video> do mascote se o arquivo não carregar

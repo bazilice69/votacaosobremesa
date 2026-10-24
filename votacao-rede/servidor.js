@@ -254,8 +254,13 @@ function servirEstatico(res,rota){
     if(e){ res.writeHead(404); return res.end("Não encontrado"); }
     const ext=path.extname(p).toLowerCase();
     const tipos={".css":"text/css",".js":"text/javascript",".html":"text/html",
-                 ".png":"image/png",".jpg":"image/jpeg",".svg":"image/svg+xml"};
-    res.writeHead(200,{"Content-Type":(tipos[ext]||"application/octet-stream")+"; charset=utf-8"});
+                 ".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",
+                 ".svg":"image/svg+xml",".mp4":"video/mp4",".webm":"video/webm",
+                 ".gif":"image/gif",".mp3":"audio/mpeg",".m4a":"audio/mp4"};
+    const tipo=tipos[ext]||"application/octet-stream";
+    // charset só faz sentido para texto; binários (mp4/png) não levam charset
+    const ehTexto=/^(text\/|application\/(javascript|json))/.test(tipo);
+    res.writeHead(200,{"Content-Type":tipo+(ehTexto?"; charset=utf-8":"")});
     res.end(buf);
   });
 }
