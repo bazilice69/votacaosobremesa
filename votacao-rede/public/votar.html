@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#7b2d4e">
+<title>🍰 Melhor Sobremesa</title>
+<link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+<header class="topo">
+  <h1>🍰 Melhor Sobremesa <span id="ano">2026</span></h1>
+  <p class="sub">Vote no seu celular 📱</p>
+</header>
+<div class="container" id="app">Carregando…</div>
+
+<script>
+const QUESITOS=[
+  {id:"sabor",nome:"Sabor",emoji:"😋"},
+  {id:"textura",nome:"Textura",emoji:"🥄"},
+  {id:"aparencia",nome:"Aparência",emoji:"✨"},
+  {id:"criatividade",nome:"Criatividade",emoji:"💡"},
+];
+const app=document.getElementById("app");
+let estado=null;
+let meuNome = localStorage.getItem("meu_nome")||"";
+let notasTemp={};
+
+function esc(s){return String(s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function norm(s){return String(s||"").trim().toLowerCase();}
+
+async function carregar(){
+  try{
+    const r=await fetch("/api/estado"); estado=await r.json();
+    document.getElementById("ano").textContent=estado.ano;
+    render();
+  }catch(e){ app.innerHTML=`<div class="vazio"><span class="big">📡</span>Sem conexão com o servidor.<br>Confira se você está na mesma Wi-Fi.</div>`; }
+}
+
+function render(){
+  if(estado.fase==="encerrado") return telaEncerrado();
+  // menu simples: inscrever ou votar
+  app.innerHTML=`
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn btn-cinza" id="t-inscrever">➕ Inscrever</button>
+      <button class="btn btn-rosa" id="t-votar">🗳️ Votar</button>
+    </div>
+    <div id="sub"></div>`;
+  document.getElementById("t-inscrever").onclick=telaInscrever;
+  document.getElementById("t-votar").onclick=telaVotar;
+  // abre direto no votar se já tem sobremesas, senão inscrever
+  (estado.sobremesas.length? telaVotar : telaInscrever)();
+}
+
+/* ---------------- INSCREVER ---------------- */
+function telaInscrever(){
+  const sub=document.getElementById("sub");
+  sub.innerHTML=`
+    <h2 class="titulo">➕ Inscreva sua sobremesa</h2>
+    <p class="dica">Seu nome + nome da sobremesa + foto. Crianças também! 👶</p>
+    <div class="card">
+      <label>Seu nome</label>
+      <input type="text" id="c-part" placeholder="Ex.: Thiago" value="${esc(meuNome)}">
+      <label>É um casal? Nome da outra pessoa (opcional)</label>
+      <input type="text" id="c-part2" placeholder="Ex.: Poliana">
+      <p class="dica" style="margin:4px 0 0">Se for casal, os dois ficam bloqueados de votar nesta sobremesa.</p>
+      <label>Nome da sobremesa</label>
+      <input type="text" id="c-nome" placeholder="Ex.: Pavê de Chocolate">
+      <label class="check-linha"><input type="checkbox" id="c-crianca"> 👶 É uma criança</label>
+      <label>Foto</label>
+      <div class="foto-area" id="foto-area"><span>📷 Toque para tirar/escolher foto</span><img id="prev" style="display:none"></div>
+      <input type="file" id="c-foto" accept="image/*" capture="environment" hidden>
+      <div style="height:12px"></div>
+      <button class="btn btn-rosa" id="btn-inscrever">Inscrever sobremesa</button>
+    </div>
+    <h2 class="titulo">Inscritas (${estado.sobremesas.length})</h2>
+    ${estado.sobremesas.map(s=>`<div class="card"><div class="card-topo">
+        ${s.foto?`<img class="foto-mini" src="${s.foto}">`:`<div class="emoji-grande">🍰</div>`}
+        <div><div class="card-nome">${esc(s.nome)}</div>
+        <div class="card-casal">por ${esc(nomesDe(s))} ${s.crianca?"👶":""}</div></div>
+      </div></div>`).join("") || `<div class="vazio">Nenhuma ainda</div>`}
+  `;
+  let fotoData="";
+  const fi=document.getElementById("c-foto"),ar=document.getElementById("foto-area"),pv=document.getElementById("prev");
+  ar.onclick=()=>fi.click();
+  fi.onchange=()=>{const f=fi.files[0];if(!f)return;comprimir(f,800,.72,d=>{fotoData=d;pv.src=d;pv.style.display="block";ar.querySelector("span").style.display="none";});};
+  document.getElementById("btn-inscrever").onclick=async()=>{
+    const participante=document.getElementById("c-part").value.trim();
+    const participante2=document.getElementById("c-part2").value.trim();
+    const nome=document.getElementById("c-nome").value.trim();
+    const crianca=document.getElementById("c-crianca").checked;
+    if(!participante)return alert("Digite seu nome.");
+    if(!nome)return alert("Digite o nome da sobremesa.");
+    localStorage.setItem("meu_nome",participante); meuNome=participante;
+    const r=await fetch("/api/inscrever",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({participante,participante2,nome,foto:fotoData,crianca})});
+    const j=await r.json();
+    if(j.erro)return alert(j.erro);
+    alert("Sobremesa inscrita! 🎉");
+    await carregar(); telaInscrever();
+  };
+}
+
+/* ---------------- VOTAR ---------------- */
+// monta a lista de pessoas que podem votar (a partir das inscrições),
+// separando os dois nomes de um casal em opções individuais.
+function listaVotantes(){
+  const set=new Map(); // chave normalizada -> {nome, sobremesaId}
+  estado.sobremesas.forEach(s=>{
+    [s.participante, s.participante2].forEach(p=>{
+      if(p && p.trim()){
+        set.set(norm(p), {nome:p.trim(), sobremesaId:s.id});
+      }
+    });
+  });
+  return [...set.values()];
+}
+
+function telaVotar(){
+  const sub=document.getElementById("sub");
+  if(estado.sobremesas.length===0){
+    sub.innerHTML=`<div class="vazio"><span class="big">🍽️</span>Nenhuma sobremesa inscrita ainda.</div>`;
+    return;
+  }
+
+  // PASSO 1 — escolher QUEM é você (lista, não digitação livre)
+  if(!meuNome){
+    const pessoas=listaVotantes();
+    sub.innerHTML=`
+      <h2 class="titulo">Quem está votando?</h2>
+      <p class="dica">Toque no seu nome. Assim ninguém vota na própria sobremesa por engano. 😉</p>
+      <div class="card">
+        ${pessoas.map(p=>`<button class="btn btn-cinza btn-pessoa" data-nome="${esc(p.nome)}" style="text-align:left;margin-bottom:8px">👤 ${esc(p.nome)}</button>`).join("")}
+        <hr style="border:none;border-top:1px solid #eedbe4;margin:12px 0">
+        <button class="btn btn-rosa" id="conv">🙋 Sou convidado (não inscrevi sobremesa)</button>
+      </div>`;
+    sub.querySelectorAll(".btn-pessoa").forEach(b=>b.onclick=()=>{
+      localStorage.setItem("meu_nome",b.dataset.nome);meuNome=b.dataset.nome;telaVotar();
+    });
+    document.getElementById("conv").onclick=()=>{
+      const n=prompt("Qual o seu nome? (você vai poder votar em todas as sobremesas)");
+      if(!n||!n.trim())return;
+      localStorage.setItem("meu_nome",n.trim());meuNome=n.trim();telaVotar();
+    };
+    return;
+  }
+
+  // esconde a sobremesa da pessoa (considerando casal: os dois nomes)
+  const votaveis=estado.sobremesas.filter(s=>
+    norm(s.participante)!==norm(meuNome) && norm(s.participante2)!==norm(meuNome));
+  const jaVotou=estado.votantes.some(v=>norm(v)===norm(meuNome));
+  notasTemp={};
+  sub.innerHTML=`
+    <h2 class="titulo">Olá, ${esc(meuNome)}! 👋 <button class="btn btn-cinza btn-sm" id="trocar" style="float:right">trocar</button></h2>
+    ${jaVotou?`<div class="aviso-fase">Você já votou. Pode votar de novo que substitui o anterior.</div>`:""}
+    <p class="dica">Dê de 1 a 5 ⭐ por critério. Sua própria sobremesa não aparece aqui.</p>
+    ${votaveis.length? votaveis.map(cardVoto).join("") : `<div class="vazio">Só há a sua sobremesa. Espere mais inscrições!</div>`}
+    ${votaveis.length?`<button class="btn btn-verde" id="enviar">Enviar meu voto ✅</button>`:""}
+  `;
+  document.getElementById("trocar").onclick=()=>{localStorage.removeItem("meu_nome");meuNome="";telaVotar();};
+  sub.querySelectorAll(".estrelas").forEach(row=>{
+    const sid=row.dataset.sid,q=row.dataset.q;
+    row.querySelectorAll("span").forEach((st,i)=>st.onclick=()=>{
+      notasTemp[sid]=notasTemp[sid]||{};notasTemp[sid][q]=i+1;
+      row.querySelectorAll("span").forEach((x,k)=>x.classList.toggle("on",k<=i));
+    });
+  });
+  const b=document.getElementById("enviar");
+  if(b)b.onclick=enviar;
+}
+function nomesDe(s){ return s.participante2? (s.participante+" & "+s.participante2) : s.participante; }
+function cardVoto(s){
+  return `<div class="card"><div class="card-topo">
+    ${s.foto?`<img class="foto-mini" src="${s.foto}">`:`<div class="emoji-grande">🍰</div>`}
+    <div><div class="card-nome">${esc(s.nome)}</div>
+    <div class="card-casal">por ${esc(nomesDe(s))} ${s.crianca?"👶":""}</div></div></div>
+    ${QUESITOS.map(q=>`<div class="quesito"><div class="quesito-nome">${q.emoji} ${q.nome}</div>
+      <div class="estrelas" data-sid="${s.id}" data-q="${q.id}">${[0,0,0,0,0].map(()=>`<span>⭐</span>`).join("")}</div>
+    </div>`).join("")}</div>`;
+}
+async function enviar(){
+  if(Object.keys(notasTemp).length===0)return alert("Dê pelo menos uma nota. 😉");
+  const r=await fetch("/api/votar",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({votante:meuNome,notasPorSobremesa:notasTemp})});
+  const j=await r.json();
+  if(j.erro)return alert(j.erro);
+  app.innerHTML=`<div class="vazio"><span class="big">🎉</span><b>Voto registrado, ${esc(meuNome)}!</b><br>Obrigado por votar.<br><br>
+    <button class="btn btn-cinza" onclick="location.reload()">Votar de novo / corrigir</button></div>`;
+}
+
+function telaEncerrado(){
+  app.innerHTML=`<div class="vazio"><span class="big">🏆</span><b>Votação encerrada!</b><br>Veja o resultado na TV. 📺</div>`;
+}
+
+/* comprime foto */
+function comprimir(file,max,q,cb){
+  const r=new FileReader();
+  r.onload=e=>{const img=new Image();img.onload=()=>{
+    let w=img.width,h=img.height;
+    if(w>h&&w>max){h=h*max/w;w=max;}else if(h>max){w=w*max/h;h=max;}
+    const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+    cv.getContext("2d").drawImage(img,0,0,w,h);cb(cv.toDataURL("image/jpeg",q));
+  };img.src=e.target.result;};
+  r.readAsDataURL(file);
+}
+
+carregar();
+</script>
+</body>
+</html>

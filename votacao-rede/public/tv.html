@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>📺 Melhor Sobremesa — TV</title>
+<link rel="stylesheet" href="/estilo.css">
+<style>
+body{background:radial-gradient(circle at 50% 20%,#7b2d4e,#2a0d1c 80%);color:#fff;}
+.tv{max-width:1100px;margin:0 auto;padding:24px;}
+.tv-cab{text-align:center;font-weight:800;color:var(--dourado);
+  font-size:clamp(1.8rem,4vw,3rem);text-shadow:0 2px 10px rgba(0,0,0,.5);}
+.tv-sub{font-size:.45em;color:#fff;opacity:.85;margin-top:6px;}
+.tv-linha{display:flex;align-items:center;gap:18px;background:rgba(255,255,255,.08);
+  border-radius:16px;padding:12px 18px;margin:12px 0;transition:.5s;}
+.tv-lider{background:linear-gradient(90deg,rgba(233,185,73,.4),rgba(233,185,73,.1));
+  border:3px solid var(--dourado);transform:scale(1.03);}
+.tv-pos{font-size:clamp(1.8rem,4vw,3rem);font-weight:800;width:1.8em;text-align:center;}
+.tv-foto{width:clamp(60px,9vw,110px);height:clamp(60px,9vw,110px);object-fit:cover;
+  border-radius:16px;border:3px solid rgba(255,255,255,.4);flex-shrink:0;}
+.tv-sem{display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:rgba(255,255,255,.12);}
+.tv-info{flex:1;min-width:0;}
+.tv-nome{font-weight:800;font-size:clamp(1.3rem,3vw,2.2rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tv-autor{font-size:clamp(.9rem,1.8vw,1.3rem);opacity:.85;}
+.tv-barra{height:14px;background:rgba(255,255,255,.18);border-radius:8px;margin-top:8px;overflow:hidden;}
+.tv-barra>i{display:block;height:100%;background:linear-gradient(90deg,var(--rosa),var(--dourado));transition:width .7s;}
+.tv-nota{font-size:clamp(1.6rem,3.5vw,2.8rem);font-weight:800;color:var(--dourado);min-width:2.4em;text-align:right;}
+.tv-rodape{text-align:center;opacity:.7;margin-top:18px;font-size:1rem;}
+/* overlay campeão */
+.camp{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 30%,#7b2d4e,#1a0712 85%);overflow:hidden;}
+.camp.off{display:none;}
+.camp-cont{text-align:center;position:relative;z-index:2;}
+.camp-coroa{font-size:clamp(4rem,12vw,9rem);animation:bal 1.2s ease-in-out infinite;}
+.camp-tit{color:var(--dourado);font-weight:800;letter-spacing:3px;font-size:clamp(1.2rem,3vw,2rem);animation:pisca 1s infinite;}
+.camp-foto{width:clamp(180px,28vw,320px);height:clamp(180px,28vw,320px);object-fit:cover;border-radius:28px;
+  border:6px solid var(--dourado);box-shadow:0 12px 50px rgba(0,0,0,.6);margin:16px auto;}
+.camp-nome{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;}
+.camp-autor{font-size:clamp(1.1rem,2.5vw,1.8rem);opacity:.9;margin-top:6px;}
+.camp-nota{color:var(--dourado);font-size:clamp(1.3rem,3vw,2rem);font-weight:800;margin-top:10px;}
+@keyframes bal{0%,100%{transform:rotate(-12deg);}50%{transform:rotate(12deg);}}
+@keyframes pisca{0%,100%{opacity:1;}50%{opacity:.5;}}
+.confete{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+.confete span{position:absolute;top:-50px;animation:cair linear infinite;}
+@keyframes cair{to{transform:translateY(110vh) rotate(360deg);}}
+/* slot p/ boneco animado futuro */
+#boneco-slot{min-height:0;}
+</style>
+</head>
+<body>
+<div class="tv" id="tv">Carregando…</div>
+
+<!-- overlay campeão -->
+<div class="camp off" id="camp">
+  <div class="confete" id="confete"></div>
+  <div class="camp-cont">
+    <div class="camp-coroa">👑</div>
+    <div class="camp-tit">E A CAMPEÃ(O) É...</div>
+    <div id="boneco-slot"></div>
+    <img class="camp-foto" id="camp-foto" style="display:none">
+    <div class="camp-nome" id="camp-nome"></div>
+    <div class="camp-autor" id="camp-autor"></div>
+    <div class="camp-nota" id="camp-nota"></div>
+  </div>
+</div>
+
+<script>
+const tv=document.getElementById("tv");
+let faseAnterior=null;
+function esc(s){return String(s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+async function tick(){
+  try{
+    const r=await fetch("/api/estado");const e=await r.json();
+    pintar(e);
+    if(e.fase==="encerrado") mostrarCampeao(e.ranking[0]);
+    else document.getElementById("camp").classList.add("off");
+    faseAnterior=e.fase;
+  }catch(err){ tv.innerHTML=`<div class="vazio" style="color:#fff"><span class="big">📡</span>Sem conexão com o servidor</div>`; }
+}
+
+function pintar(e){
+  const rank=e.ranking;
+  let h=`<div class="tv-cab">🍰 Melhor Sobremesa ${e.ano} 🏆
+    <div class="tv-sub">${e.totalVotantes} votante(s) · ao vivo</div></div>`;
+  if(rank.length===0){
+    h+=`<div class="vazio" style="color:#fff"><span class="big">🍽️</span>Aguardando inscrições…</div>`;
+  }else{
+    rank.forEach((r,i)=>{
+      const pos=i===0?"🥇":i===1?"🥈":i===2?"🥉":(i+1)+"º";
+      h+=`<div class="tv-linha ${i===0&&r.media>0?'tv-lider':''}">
+        <div class="tv-pos">${pos}</div>
+        ${r.foto?`<img class="tv-foto" src="${r.foto}">`:`<div class="tv-foto tv-sem">🍰</div>`}
+        <div class="tv-info"><div class="tv-nome">${esc(r.nome)}</div>
+          <div class="tv-autor">${esc(r.participante)} ${r.crianca?"👶":""} · ${r.nvotos} voto(s)</div>
+          <div class="tv-barra"><i style="width:${(r.media/5*100).toFixed(0)}%"></i></div></div>
+        <div class="tv-nota">${r.media.toFixed(2)}</div></div>`;
+    });
+  }
+  h+=`<div class="tv-rodape">📱 Entre pelo mesmo Wi-Fi e vote no seu celular · atualiza sozinho</div>`;
+  tv.innerHTML=h;
+}
+
+function mostrarCampeao(c){
+  const camp=document.getElementById("camp");
+  if(!c||c.media<=0){camp.classList.add("off");return;}
+  document.getElementById("camp-foto").src=c.foto||"";
+  document.getElementById("camp-foto").style.display=c.foto?"block":"none";
+  document.getElementById("camp-nome").textContent=c.nome;
+  document.getElementById("camp-autor").textContent="por "+c.participante+(c.crianca?" 👶":"");
+  document.getElementById("camp-nota").textContent="Nota "+c.media.toFixed(2)+" ⭐";
+  if(camp.classList.contains("off")){ camp.classList.remove("off"); chuva(); }
+}
+function chuva(){
+  const box=document.getElementById("confete");box.innerHTML="";
+  const em=["🎉","🎊","⭐","🍰","🧁","👑","✨"];
+  for(let i=0;i<60;i++){const s=document.createElement("span");
+    s.textContent=em[Math.floor(Math.random()*em.length)];
+    s.style.left=Math.random()*100+"%";
+    s.style.animationDuration=(2+Math.random()*2.5)+"s";
+    s.style.animationDelay=(Math.random()*2)+"s";
+    s.style.fontSize=(20+Math.random()*28)+"px";
+    box.appendChild(s);}
+}
+
+tick();
+setInterval(tick,2000);
+</script>
+</body>
+</html>

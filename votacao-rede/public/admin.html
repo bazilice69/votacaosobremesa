@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>👑 Admin — Melhor Sobremesa</title>
+<link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+<header class="topo">
+  <h1>👑 Painel do Organizador</h1>
+  <p class="sub">Controle da competição</p>
+</header>
+<div class="container" id="app">Carregando…</div>
+
+<script>
+const app=document.getElementById("app");
+let estado=null;
+function esc(s){return String(s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+async function carregar(){
+  const r=await fetch("/api/estado");estado=await r.json();render();
+}
+async function admin(body){
+  const r=await fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  return r.json();
+}
+
+function render(){
+  const faseTxt={inscricao:"📝 Inscrição aberta",votacao:"🗳️ Votação em andamento",encerrado:"🏁 Encerrada"}[estado.fase];
+  app.innerHTML=`
+    <div class="aviso-fase">Fase atual: <b>${faseTxt}</b> · Ano ${estado.ano} · ${estado.totalVotantes} votante(s)</div>
+
+    <div class="card">
+      <div class="card-nome" style="margin-bottom:8px">Controlar fase</div>
+      <button class="btn btn-vinho" id="f-insc">📝 Abrir inscrições</button>
+      <button class="btn btn-rosa" id="f-vot">🗳️ Abrir votação</button>
+      <button class="btn btn-dourado" id="f-enc">🏆 Encerrar e coroar campeã(o)</button>
+    </div>
+
+    <div class="card">
+      <div class="card-nome" style="margin-bottom:8px">Sobremesas inscritas (${estado.sobremesas.length})</div>
+      ${estado.sobremesas.map(s=>`<div class="rank-item" style="margin-bottom:8px">
+        ${s.foto?`<img class="foto-mini" src="${s.foto}">`:`<div class="emoji-grande">🍰</div>`}
+        <div class="rank-info"><div class="card-nome">${esc(s.nome)}</div>
+        <div class="card-casal">por ${esc(s.participante)} ${s.crianca?"👶":""}</div></div>
+        <button class="btn btn-cinza btn-sm" data-del="${s.id}">🗑️</button></div>`).join("")||`<div class="vazio">Nenhuma</div>`}
+    </div>
+
+    <div class="card">
+      <div class="card-nome" style="margin-bottom:8px">🏛️ Hall da Fama</div>
+      ${estado.hall.length? estado.hall.slice().sort((a,b)=>b.ano-a.ano).map(h=>
+        `<div class="rank-item" style="margin-bottom:6px"><div class="hall-ano" style="margin:0;width:70px">${h.ano}</div>
+         <div class="rank-info"><div class="card-nome">${esc(h.nome)}</div>
+         <div class="card-casal">${esc(h.participante)}</div></div>
+         <div class="rank-nota">${Number(h.media).toFixed(2)}</div></div>`).join("")
+        :`<div class="vazio">Sem campeões ainda</div>`}
+    </div>
+
+    <div class="card">
+      <div class="card-nome" style="margin-bottom:8px">Ferramentas</div>
+      <button class="btn btn-cinza" id="ex">🧪 Carregar dados de EXEMPLO (teste)</button>
+      <button class="btn btn-cinza" id="zv">🗑️ Zerar votos</button>
+      <label>Novo ano</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="in-ano" value="${estado.ano}" inputmode="numeric">
+        <button class="btn btn-vinho btn-sm" id="novo">🎉 Iniciar novo ano</button>
+      </div>
+      <div style="height:10px"></div>
+      <button class="btn btn-cinza" id="reset">♻️ Apagar TUDO (inclui Hall)</button>
+    </div>
+  `;
+
+  document.getElementById("f-insc").onclick=async()=>{await admin({acao:"fase",fase:"inscricao"});carregar();};
+  document.getElementById("f-vot").onclick=async()=>{await admin({acao:"fase",fase:"votacao"});carregar();};
+  document.getElementById("f-enc").onclick=async()=>{
+    if(!confirm("Encerrar a votação e coroar a campeã/o campeão? A TV vai exibir a animação."))return;
+    const j=await admin({acao:"encerrar"});
+    if(j.campeao)alert("🏆 Campeã(o): "+j.campeao.nome+" (por "+j.campeao.participante+")");
+    carregar();
+  };
+  app.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Remover esta sobremesa e seus votos?"))return;
+    await admin({acao:"remover-sobremesa",sobremesaId:b.dataset.del});carregar();
+  });
+  document.getElementById("ex").onclick=async()=>{
+    if(!confirm("Carregar participantes e votos de exemplo? (substitui os atuais)"))return;
+    await admin({acao:"exemplo"});carregar();
+  };
+  document.getElementById("zv").onclick=async()=>{if(!confirm("Zerar todos os votos?"))return;await admin({acao:"zerar-votos"});carregar();};
+  document.getElementById("novo").onclick=async()=>{
+    const ano=document.getElementById("in-ano").value;
+    if(!confirm("Iniciar novo ano? Apaga inscrições e votos (mantém o Hall)."))return;
+    await admin({acao:"novo-ano",ano});carregar();
+  };
+  document.getElementById("reset").onclick=async()=>{if(!confirm("Apagar TUDO, inclusive o Hall da Fama?"))return;await admin({acao:"reset-tudo"});carregar();};
+}
+carregar();
+setInterval(carregar,4000);
+</script>
+</body>
+</html>
