@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#7b2d4e">
+<title>🍰 Melhor Sobremesa 2026</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============ TOPO ============ -->
+<header class="topo">
+  <h1>🍰 Melhor Sobremesa <span>2026</span></h1>
+  <p class="sub">Competição da Família</p>
+</header>
+
+<main id="app"></main>
+
+<!-- ============ MENU INFERIOR ============ -->
+<nav class="tabbar">
+  <button data-tela="cadastrar" class="tab">➕<span>Inscrever</span></button>
+  <button data-tela="votar"     class="tab ativo">🗳️<span>Votar</span></button>
+  <button data-tela="ranking"   class="tab">🏆<span>Ranking</span></button>
+</nav>
+
+<!-- ============ MODAL GENÉRICO ============ -->
+<div id="modal" class="modal escondido">
+  <div class="modal-card">
+    <p id="modal-texto"></p>
+    <div class="modal-botoes">
+      <button id="modal-cancelar" class="btn btn-cinza">Cancelar</button>
+      <button id="modal-ok" class="btn btn-rosa">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
