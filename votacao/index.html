@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#7b2d4e">
-<title>🍰 Melhor Sobremesa 2026</title>
+<title>🍰 Melhor Sobremesa</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <!-- ============ TOPO ============ -->
 <header class="topo">
-  <h1>🍰 Melhor Sobremesa <span>2026</span></h1>
+  <h1>🍰 Melhor Sobremesa <span id="ano-topo">2026</span></h1>
   <p class="sub">Competição da Família</p>
 </header>
 
@@ -21,7 +21,9 @@
 <nav class="tabbar">
   <button data-tela="cadastrar" class="tab">➕<span>Inscrever</span></button>
   <button data-tela="votar"     class="tab ativo">🗳️<span>Votar</span></button>
+  <button data-tela="tv"        class="tab">📺<span>TV</span></button>
   <button data-tela="ranking"   class="tab">🏆<span>Ranking</span></button>
+  <button data-tela="hall"      class="tab">🏛️<span>Hall</span></button>
 </nav>
 
 <!-- ============ MODAL GENÉRICO ============ -->
@@ -32,6 +34,22 @@
       <button id="modal-cancelar" class="btn btn-cinza">Cancelar</button>
       <button id="modal-ok" class="btn btn-rosa">OK</button>
     </div>
+  </div>
+</div>
+
+<!-- ============ OVERLAY DO CAMPEÃO (animação) ============ -->
+<div id="campeao-overlay" class="campeao-overlay escondido">
+  <div class="confete-chuva" id="confete-chuva"></div>
+  <div class="campeao-conteudo">
+    <div class="campeao-coroa">👑</div>
+    <div class="campeao-titulo">E A CAMPEÃ(O) É...</div>
+    <!-- espaço reservado para o boneco animado futuro -->
+    <div class="boneco-slot" id="boneco-slot"></div>
+    <img id="campeao-foto" class="campeao-foto" alt="">
+    <div id="campeao-nome" class="campeao-nome"></div>
+    <div id="campeao-autor" class="campeao-autor"></div>
+    <div id="campeao-nota" class="campeao-nota"></div>
+    <button id="campeao-fechar" class="btn btn-dourado" style="max-width:280px;margin:18px auto 0">Fechar 🎉</button>
   </div>
 </div>
 

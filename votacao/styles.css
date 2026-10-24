@@ -158,3 +158,86 @@ input[type=text]:focus{outline:none;border-color:var(--rosa);}
 .foto-area span{padding:16px;font-size:.95rem;}
 .foto-area small{font-size:.78rem;opacity:.8;}
 .foto-area img{width:100%;height:100%;max-height:260px;object-fit:cover;display:block;}
+
+/* ---------- Checkbox criança ---------- */
+.check-linha{display:flex;align-items:center;gap:8px;font-weight:600;
+  font-size:.95rem;margin:12px 0 0;cursor:pointer;}
+.check-linha input{width:20px;height:20px;}
+
+/* ---------- Hall da Fama ---------- */
+.hall-ano{font-weight:800;color:var(--vinho);font-size:1.15rem;
+  text-align:center;margin-bottom:8px;}
+
+/* ====================================================================
+   MODO TV (Fire TV) — tela grande, fundo escuro, alto contraste
+   ==================================================================== */
+.tv-wrap{
+  background:linear-gradient(160deg,#4a1230,#7b2d4e);
+  color:#fff;border-radius:18px;padding:18px;min-height:70vh;
+}
+.tv-cabecalho{
+  text-align:center;font-size:clamp(1.4rem,5vw,2.4rem);font-weight:800;
+  color:var(--dourado);text-shadow:0 2px 8px rgba(0,0,0,.4);margin-bottom:14px;
+}
+.tv-sub{font-size:.5em;color:#fff;opacity:.85;font-weight:600;margin-top:4px;}
+.tv-linha{
+  display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.08);
+  border-radius:14px;padding:10px 14px;margin-bottom:10px;
+  transition:.4s;
+}
+.tv-lider{
+  background:linear-gradient(90deg,rgba(233,185,73,.35),rgba(233,185,73,.1));
+  border:2px solid var(--dourado);transform:scale(1.02);
+}
+.tv-pos{font-size:clamp(1.4rem,5vw,2.2rem);font-weight:800;width:1.6em;text-align:center;}
+.tv-foto{width:clamp(48px,12vw,78px);height:clamp(48px,12vw,78px);
+  object-fit:cover;border-radius:12px;border:2px solid rgba(255,255,255,.4);flex-shrink:0;}
+.tv-sem{display:flex;align-items:center;justify-content:center;font-size:2rem;
+  background:rgba(255,255,255,.12);}
+.tv-info{flex:1;min-width:0;}
+.tv-nome{font-weight:800;font-size:clamp(1rem,3.6vw,1.5rem);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tv-autor{font-size:clamp(.75rem,2.6vw,1rem);opacity:.85;}
+.tv-barra{height:10px;background:rgba(255,255,255,.18);border-radius:6px;
+  margin-top:6px;overflow:hidden;}
+.tv-barra > i{display:block;height:100%;
+  background:linear-gradient(90deg,var(--rosa),var(--dourado));transition:width .6s;}
+.tv-nota{font-size:clamp(1.2rem,4.5vw,2rem);font-weight:800;color:var(--dourado);
+  min-width:2.2em;text-align:right;}
+.tv-dica{text-align:center;font-size:.8rem;opacity:.7;margin-top:14px;}
+
+/* ====================================================================
+   OVERLAY DO CAMPEÃO (animação de parabéns)
+   ==================================================================== */
+.campeao-overlay{
+  position:fixed;inset:0;z-index:60;overflow:hidden;
+  background:radial-gradient(circle at 50% 35%,#7b2d4e,#2a0d1c 80%);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.campeao-overlay.escondido{display:none;}
+.campeao-conteudo{text-align:center;color:#fff;max-width:420px;position:relative;z-index:2;}
+.campeao-coroa{font-size:4.5rem;animation:balanca 1.2s ease-in-out infinite;}
+.campeao-titulo{font-size:1.1rem;letter-spacing:2px;color:var(--dourado);
+  font-weight:800;margin:4px 0 14px;animation:pisca 1.1s ease-in-out infinite;}
+/* slot reservado para seu BONECO ANIMADO futuro */
+.boneco-slot{min-height:0;}
+.campeao-foto{width:200px;height:200px;max-width:70vw;max-height:70vw;
+  object-fit:cover;border-radius:22px;border:5px solid var(--dourado);
+  box-shadow:0 10px 40px rgba(0,0,0,.5);animation:pop .6s ease;}
+.campeao-nome{font-size:2rem;font-weight:800;margin:16px 0 2px;}
+.campeao-autor{font-size:1.1rem;opacity:.9;}
+.campeao-nota{font-size:1.3rem;color:var(--dourado);font-weight:800;margin-top:8px;}
+
+@keyframes balanca{0%,100%{transform:rotate(-12deg);}50%{transform:rotate(12deg);}}
+@keyframes pisca{0%,100%{opacity:1;}50%{opacity:.5;}}
+
+/* chuva de confete */
+.confete-chuva{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+.confete-chuva span{
+  position:absolute;top:-40px;animation-name:cair;animation-timing-function:linear;
+  animation-iteration-count:infinite;
+}
+@keyframes cair{
+  0%{transform:translateY(-40px) rotate(0);opacity:1;}
+  100%{transform:translateY(105vh) rotate(360deg);opacity:.9;}
+}
