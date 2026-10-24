@@ -43,8 +43,17 @@ body{background:radial-gradient(circle at 50% 20%,#7b2d4e,#2a0d1c 80%);color:#ff
 .confete{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
 .confete span{position:absolute;top:-50px;animation:cair linear infinite;}
 @keyframes cair{to{transform:translateY(110vh) rotate(360deg);}}
-/* slot p/ boneco animado futuro */
+/* mascote chef na tela do campeão */
 #boneco-slot{min-height:0;}
+.mascote-campeao{
+  width:clamp(140px,22vw,240px);display:block;margin:0 auto -10px;
+  filter:drop-shadow(0 12px 24px rgba(0,0,0,.45));
+  animation:mascote-pula 1s ease-in-out infinite;
+}
+@keyframes mascote-pula{
+  0%,100%{transform:translateY(0) rotate(-2deg);}
+  50%{transform:translateY(-14px) rotate(2deg);}
+}
 </style>
 </head>
 <body>
@@ -56,7 +65,9 @@ body{background:radial-gradient(circle at 50% 20%,#7b2d4e,#2a0d1c 80%);color:#ff
   <div class="camp-cont">
     <div class="camp-coroa">👑</div>
     <div class="camp-tit">E A CAMPEÃ(O) É...</div>
-    <div id="boneco-slot"></div>
+    <div id="boneco-slot">
+      <img src="/mascote.png" class="mascote-campeao" alt="" onerror="this.style.display='none'">
+    </div>
     <img class="camp-foto" id="camp-foto" style="display:none">
     <div class="camp-nome" id="camp-nome"></div>
     <div class="camp-autor" id="camp-autor"></div>

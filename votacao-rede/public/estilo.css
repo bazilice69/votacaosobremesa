@@ -76,3 +76,9 @@ input[type=text]:focus{outline:none;border-color:var(--rosa);}
 
 .aviso-fase{background:#fff3cd;border:1px solid var(--dourado);border-radius:12px;
   padding:12px;text-align:center;font-size:.9rem;margin-bottom:14px;color:#7a5a00;}
+
+/* ---------- Mascote chef no topo ---------- */
+.topo-mascote{display:flex;align-items:center;gap:12px;justify-content:center;text-align:left;}
+.mascote-topo{height:70px;width:auto;flex-shrink:0;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));}
+.topo-mascote h1{font-size:1.2rem;}
