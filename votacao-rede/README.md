@@ -52,3 +52,18 @@ Tudo roda num **notebook** na mesma Wi-Fi — **sem internet** e **sem instalar 
 
 - Os dados ficam no arquivo `dados.json` (criado ao lado do `servidor.js`).
 - Espaço para um **boneco animado** do campeão já reservado em `tv.html` (`#boneco-slot`).
+
+## 🎬 Mascote animado (chef campeão)
+
+O sistema usa um mascote chef na **coroação do campeão** (na TV) e, opcionalmente, no topo.
+
+Coloque os arquivos na pasta `votacao-rede/public/`:
+
+| Arquivo | Onde aparece | Obrigatório? |
+|---------|--------------|--------------|
+| `mascote.mp4` | Vídeo animado na tela do **campeão** (loop, sem som) | recomendado |
+| `mascote.png` | Imagem estática no **topo** das telas | opcional |
+
+- O MP4 deve ser **sem áudio** (toca com `muted` para funcionar em autoplay nos navegadores/TV).
+- Se algum arquivo não existir, o sistema simplesmente **não mostra** aquele elemento (não quebra).
+- Dica: para o `mascote.png` do topo, exporte um **frame** do vídeo.

@@ -46,13 +46,8 @@ body{background:radial-gradient(circle at 50% 20%,#7b2d4e,#2a0d1c 80%);color:#ff
 /* mascote chef na tela do campeão */
 #boneco-slot{min-height:0;}
 .mascote-campeao{
-  width:clamp(140px,22vw,240px);display:block;margin:0 auto -10px;
+  width:clamp(160px,26vw,300px);height:auto;display:block;margin:0 auto -10px;
   filter:drop-shadow(0 12px 24px rgba(0,0,0,.45));
-  animation:mascote-pula 1s ease-in-out infinite;
-}
-@keyframes mascote-pula{
-  0%,100%{transform:translateY(0) rotate(-2deg);}
-  50%{transform:translateY(-14px) rotate(2deg);}
 }
 </style>
 </head>
@@ -66,7 +61,10 @@ body{background:radial-gradient(circle at 50% 20%,#7b2d4e,#2a0d1c 80%);color:#ff
     <div class="camp-coroa">👑</div>
     <div class="camp-tit">E A CAMPEÃ(O) É...</div>
     <div id="boneco-slot">
-      <img src="/mascote.png" class="mascote-campeao" alt="" onerror="this.style.display='none'">
+      <video id="mascote-video" class="mascote-campeao" autoplay loop muted playsinline
+             onerror="this.style.display='none'">
+        <source src="/mascote.mp4" type="video/mp4">
+      </video>
     </div>
     <img class="camp-foto" id="camp-foto" style="display:none">
     <div class="camp-nome" id="camp-nome"></div>
@@ -120,8 +118,22 @@ function mostrarCampeao(c){
   document.getElementById("camp-nome").textContent=c.nome;
   document.getElementById("camp-autor").textContent="por "+c.participante+(c.crianca?" 👶":"");
   document.getElementById("camp-nota").textContent="Nota "+c.media.toFixed(2)+" ⭐";
-  if(camp.classList.contains("off")){ camp.classList.remove("off"); chuva(); }
+  if(camp.classList.contains("off")){
+    camp.classList.remove("off");
+    chuva();
+    // (re)inicia o vídeo do mascote do começo quando o campeão surge
+    const v=document.getElementById("mascote-video");
+    if(v){ try{ v.currentTime=0; v.play(); }catch(e){} }
+  }
 }
+// esconde o <video> do mascote se o arquivo não carregar
+(function(){
+  const v=document.getElementById("mascote-video");
+  if(!v) return;
+  v.addEventListener("error",()=>v.style.display="none",true);
+  // fallback: se após 3s não houver dados do vídeo, esconde
+  setTimeout(()=>{ if(v.readyState===0) v.style.display="none"; },3000);
+})();
 function chuva(){
   const box=document.getElementById("confete");box.innerHTML="";
   const em=["🎉","🎊","⭐","🍰","🧁","👑","✨"];

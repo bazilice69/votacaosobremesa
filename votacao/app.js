@@ -417,6 +417,8 @@ function mostrarCampeao(c){
   document.getElementById("campeao-nota").textContent = "Nota "+c.media.toFixed(2)+" ⭐";
   ov.classList.remove("escondido");
   chuvaConfete();
+  const v=document.getElementById("mascote-video");
+  if(v){ try{ v.currentTime=0; v.play(); }catch(e){} }
   document.getElementById("campeao-fechar").onclick=()=>ov.classList.add("escondido");
 }
 
