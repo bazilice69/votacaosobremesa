@@ -247,3 +247,10 @@ input[type=text]:focus{outline:none;border-color:var(--rosa);}
   width:180px;max-width:60vw;height:auto;display:block;margin:0 auto -6px;
   filter:drop-shadow(0 10px 20px rgba(0,0,0,.45));
 }
+
+/* ---------- Seletor Sozinho / Dupla ---------- */
+.segmento{display:flex;gap:8px;margin:6px 0 4px;}
+.seg-btn{flex:1;border:2px solid #e7d6df;background:#fff;color:var(--texto);
+  border-radius:12px;padding:12px 8px;font-weight:700;font-size:.95rem;cursor:pointer;transition:.15s;}
+.seg-btn.ativo{background:var(--rosa);color:#fff;border-color:var(--rosa);}
+.btn-pessoa .badge-ok{margin-left:6px;}

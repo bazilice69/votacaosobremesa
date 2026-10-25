@@ -82,7 +82,7 @@ function telaCadastrar(){
         ${s.foto?`<img class="foto-mini" src="${s.foto}" alt="">`:`<div class="emoji-grande">🍰</div>`}
         <div style="flex:1">
           <div class="card-nome">${esc(s.nome||"(sem nome)")}</div>
-          <div class="card-casal">por ${esc(s.participante||"?")} ${s.crianca?"👶":""}</div>
+          <div class="card-casal">por ${esc(nomesDe(s))} ${s.crianca?"👶":""}</div>
         </div>
         <button class="btn btn-cinza btn-sm" data-del="${s.id}">🗑️</button>
       </div>
@@ -90,11 +90,22 @@ function telaCadastrar(){
 
   app.innerHTML = `
     <h2 class="titulo">🍰 Inscreva sua sobremesa</h2>
-    <p class="dica">Cada pessoa coloca <b>seu nome</b>, o <b>nome da sobremesa</b> e uma <b>foto</b>. Crianças também podem participar! 👶</p>
+    <p class="dica">Pode competir <b>sozinho(a)</b> ou em <b>dupla/casal</b>. Escolha abaixo. 👇</p>
 
     <div class="card">
-      <label>Nome do participante</label>
+      <label>Quem vai competir?</label>
+      <div class="segmento">
+        <button type="button" class="seg-btn ativo" data-tipo="solo">🧑 Sozinho(a)</button>
+        <button type="button" class="seg-btn" data-tipo="dupla">💑 Casal / Dupla</button>
+      </div>
+
+      <label id="lbl-part">Nome</label>
       <input type="text" id="c-part" placeholder="Ex.: João" autocomplete="off">
+
+      <div id="box-part2" style="display:none">
+        <label>Nome da 2ª pessoa</label>
+        <input type="text" id="c-part2" placeholder="Ex.: Maria" autocomplete="off">
+      </div>
 
       <label>Nome da sobremesa</label>
       <input type="text" id="c-nome" placeholder="Ex.: Pavê de Chocolate" autocomplete="off">
@@ -119,6 +130,15 @@ function telaCadastrar(){
     ${estado.sobremesas.length? `<button class="btn btn-cinza" id="btn-reset-tudo">♻️ Apagar inscrições e votos</button>`:""}
   `;
 
+  // alterna entre Sozinho e Dupla
+  let tipo="solo";
+  app.querySelectorAll(".seg-btn").forEach(b=>b.onclick=()=>{
+    tipo=b.dataset.tipo;
+    app.querySelectorAll(".seg-btn").forEach(x=>x.classList.toggle("ativo",x===b));
+    document.getElementById("box-part2").style.display = tipo==="dupla"?"block":"none";
+    document.getElementById("lbl-part").textContent = tipo==="dupla"?"Nome da 1ª pessoa":"Nome";
+  });
+
   let fotoData = "";
   const fileInp=document.getElementById("c-foto");
   const area=document.getElementById("foto-area");
@@ -134,11 +154,13 @@ function telaCadastrar(){
 
   document.getElementById("btn-inscrever").onclick=()=>{
     const part=document.getElementById("c-part").value.trim();
+    const part2=tipo==="dupla"? document.getElementById("c-part2").value.trim() : "";
     const nome=document.getElementById("c-nome").value.trim();
     const crianca=document.getElementById("c-crianca").checked;
-    if(!part){ aviso("Digite o nome do participante."); return; }
+    if(!part){ aviso(tipo==="dupla"?"Digite o nome da 1ª pessoa.":"Digite o nome."); return; }
+    if(tipo==="dupla" && !part2){ aviso("Digite o nome da 2ª pessoa (ou mude para Sozinho)."); return; }
     if(!nome){ aviso("Digite o nome da sobremesa."); return; }
-    estado.sobremesas.push({ id:id(), participante:part, nome, foto:fotoData, crianca });
+    estado.sobremesas.push({ id:id(), participante:part, participante2:part2, nome, foto:fotoData, crianca });
     salvar();
     aviso(`Sobremesa "${esc(nome)}" inscrita! 🎉`,()=>render());
   };
@@ -191,21 +213,19 @@ function telaVotar(){
   }
 
   if(!votanteAtual){
+    const pessoas=listaVotantes();
     app.innerHTML=`
       <h2 class="titulo">Quem está votando?</h2>
-      <p class="dica">Digite seu nome e passe o aparelho. Crianças podem usar o celular dos pais. 👶</p>
+      <p class="dica">Toque no seu nome. Assim ninguém vota na própria sobremesa por engano. 😉</p>
       <div class="card">
-        <label>Seu nome</label>
-        <input type="text" id="nome-votante" placeholder="Ex.: Tia Marta" autocomplete="off">
-        <p class="dica" style="margin:10px 0 0">💡 Se você inscreveu uma sobremesa, ela não vai aparecer para você votar.</p>
-        <div style="height:12px"></div>
-        <button class="btn btn-rosa" id="btn-comecar">Começar a votar 🗳️</button>
+        ${pessoas.map(p=>`<button class="btn btn-cinza btn-pessoa" data-nome="${esc(p.nome)}" style="text-align:left;margin-bottom:8px">👤 ${esc(p.nome)}${jaVotou(p.nome)?' <span class="badge-ok">✓ votou</span>':''}</button>`).join("")}
+        <hr style="border:none;border-top:1px solid #eedbe4;margin:12px 0">
+        <button class="btn btn-rosa" id="conv">🙋 Sou convidado (não inscrevi sobremesa)</button>
       </div>
       ${listaJaVotaram()}
     `;
-    document.getElementById("btn-comecar").onclick=()=>{
-      const v=document.getElementById("nome-votante").value.trim();
-      if(!v){ aviso("Digite seu nome para votar."); return; }
+    app.querySelectorAll(".btn-pessoa").forEach(b=>b.onclick=()=>{
+      const v=b.dataset.nome;
       if(jaVotou(v)){
         confirmar(`"${esc(v)}" já votou. Votar de novo (substitui o voto anterior)?`,()=>{
           estado.votos=estado.votos.filter(x=>norm(x.votante)!==norm(v));
@@ -214,12 +234,27 @@ function telaVotar(){
         return;
       }
       iniciar(v);
+    });
+    document.getElementById("conv").onclick=()=>{
+      const area=document.getElementById("app");
+      const v=prompt("Qual o seu nome? (você vai poder votar em todas as sobremesas)");
+      if(!v||!v.trim())return;
+      const nome=v.trim();
+      if(jaVotou(nome)){
+        confirmar(`"${esc(nome)}" já votou. Votar de novo?`,()=>{
+          estado.votos=estado.votos.filter(x=>norm(x.votante)!==norm(nome));
+          salvar(); iniciar(nome);
+        });
+        return;
+      }
+      iniciar(nome);
     };
     return;
   }
 
-  // sobremesas que ESTE votante pode avaliar (exclui a própria)
-  const votaveis = estado.sobremesas.filter(s=> s.id!==votanteEhSobremesaId);
+  // sobremesas que ESTE votante pode avaliar (exclui a própria — considera casal)
+  const votaveis = estado.sobremesas.filter(s=>
+    norm(s.participante)!==norm(votanteAtual) && norm(s.participante2)!==norm(votanteAtual));
 
   if(votaveis.length===0){
     app.innerHTML=`
@@ -253,11 +288,28 @@ function telaVotar(){
   document.getElementById("btn-trocar-nome").onclick=()=>{votanteAtual="";notasTemp={};render();};
 }
 
+// lista de pessoas que podem votar (separa os dois nomes de uma dupla)
+function listaVotantes(){
+  const set=new Map();
+  estado.sobremesas.forEach(s=>{
+    [s.participante, s.participante2].forEach(p=>{
+      if(p && p.trim()) set.set(norm(p), {nome:p.trim(), sobremesaId:s.id});
+    });
+  });
+  return [...set.values()];
+}
+// nomes de uma sobremesa (solo ou dupla) para exibição
+function nomesDe(s){ const p=s.participante||"?"; return s.participante2? (p+" & "+s.participante2) : p; }
+// a sobremesa que pertence a este votante (considera os dois nomes da dupla)
+function sobremesaDoVotante(nome){
+  return estado.sobremesas.find(s=>
+    norm(s.participante)===norm(nome) || norm(s.participante2)===norm(nome));
+}
+
 function iniciar(nome){
   votanteAtual=nome;
   notasTemp={};
-  // tenta identificar se o votante é um participante (p/ esconder a própria sobremesa)
-  const minha=estado.sobremesas.find(s=>norm(s.participante)===norm(nome));
+  const minha=sobremesaDoVotante(nome);
   votanteEhSobremesaId = minha? minha.id : "";
   render();
 }
@@ -276,7 +328,7 @@ function cardVoto(s){
         ${s.foto?`<img class="foto-mini" src="${s.foto}" alt="">`:`<div class="emoji-grande">🍰</div>`}
         <div>
           <div class="card-nome">${esc(s.nome)}</div>
-          <div class="card-casal">por ${esc(s.participante)} ${s.crianca?"👶":""}</div>
+          <div class="card-casal">por ${esc(nomesDe(s))} ${s.crianca?"👶":""}</div>
         </div>
       </div>
       ${quesitos}
@@ -288,7 +340,7 @@ function enviarVoto(){
   const avaliadas=Object.keys(notasTemp);
   if(avaliadas.length===0){ aviso("Dê pelo menos uma nota antes de enviar. 😉"); return; }
   avaliadas.forEach(sid=>{
-    if(sid===votanteEhSobremesaId) return; // proteção extra
+    if(sid===votanteEhSobremesaId) return; // bloqueio real (própria sobremesa / dupla)
     const notas={};
     QUESITOS.forEach(q=> notas[q.id]=notasTemp[sid][q.id]||0 );
     if(QUESITOS.reduce((a,q)=>a+notas[q.id],0)>0)
@@ -364,7 +416,7 @@ function telaRanking(){
           ${r.foto?`<img class="foto-mini" src="${r.foto}">`:`<div class="emoji-grande">🍰</div>`}
           <div class="rank-info">
             <div class="card-nome">${esc(r.nome)}</div>
-            <div class="card-casal">por ${esc(r.participante)} ${r.crianca?"👶":""} · ${r.nvotos} voto(s)</div>
+            <div class="card-casal">por ${esc(nomesDe(r))} ${r.crianca?"👶":""} · ${r.nvotos} voto(s)</div>
             <div class="barra"><i style="width:${(r.media/5*100).toFixed(0)}%"></i></div>
           </div>
           <div class="rank-nota">${r.media.toFixed(2)}</div>
@@ -399,6 +451,7 @@ function encerrarVotacao(){
     ano: estado.ano,
     nome: campeao.nome,
     participante: campeao.participante,
+    participante2: campeao.participante2||"",
     foto: campeao.foto,
     media: Number(campeao.media.toFixed(2)),
     crianca: !!campeao.crianca,
@@ -413,7 +466,7 @@ function mostrarCampeao(c){
   document.getElementById("campeao-foto").src = c.foto||"";
   document.getElementById("campeao-foto").style.display = c.foto?"block":"none";
   document.getElementById("campeao-nome").textContent = c.nome;
-  document.getElementById("campeao-autor").textContent = "por "+c.participante+(c.crianca?" 👶":"");
+  document.getElementById("campeao-autor").textContent = "por "+nomesDe(c)+(c.crianca?" 👶":"");
   document.getElementById("campeao-nota").textContent = "Nota "+c.media.toFixed(2)+" ⭐";
   ov.classList.remove("escondido");
   chuvaConfete();
@@ -471,7 +524,7 @@ function pintarTV(){
           ${r.foto?`<img class="tv-foto" src="${r.foto}">`:`<div class="tv-foto tv-sem">🍰</div>`}
           <div class="tv-info">
             <div class="tv-nome">${esc(r.nome)}</div>
-            <div class="tv-autor">${esc(r.participante)} ${r.crianca?"👶":""}</div>
+            <div class="tv-autor">${esc(nomesDe(r))} ${r.crianca?"👶":""}</div>
             <div class="tv-barra"><i style="width:${(r.media/5*100).toFixed(0)}%"></i></div>
           </div>
           <div class="tv-nota">${r.media.toFixed(2)}</div>
@@ -501,7 +554,7 @@ function telaHall(){
             ${h.foto?`<img class="foto-mini" src="${h.foto}">`:`<div class="emoji-grande">🍰</div>`}
             <div class="rank-info">
               <div class="card-nome">${esc(h.nome)}</div>
-              <div class="card-casal">campeã(o): ${esc(h.participante)} ${h.crianca?"👶":""}</div>
+              <div class="card-casal">campeã(o): ${esc(nomesDe(h))} ${h.crianca?"👶":""}</div>
             </div>
             <div class="rank-nota">${Number(h.media).toFixed(2)}</div>
           </div>
