@@ -37,23 +37,40 @@
   </div>
 </div>
 
+<!-- ============ TELA DE SUSPENSE (toque para revelar) ============ -->
+<div id="revelar-overlay" class="revelar-overlay escondido">
+  <div class="revelar-cont">
+    <div class="revelar-drum">🥁</div>
+    <div class="revelar-tit">A votação foi encerrada!</div>
+    <div class="revelar-sub">Prepare a família… 🥁🥁🥁</div>
+    <button id="btn-revelar" class="btn btn-dourado revelar-btn">👑 REVELAR A CAMPEÃ(O)!</button>
+    <div class="revelar-dica">Toque para revelar com o mascote 🎬🔊</div>
+  </div>
+</div>
+
 <!-- ============ OVERLAY DO CAMPEÃO (animação) ============ -->
 <div id="campeao-overlay" class="campeao-overlay escondido">
   <div class="confete-chuva" id="confete-chuva"></div>
   <div class="campeao-conteudo">
     <div class="campeao-coroa">👑</div>
-    <div class="campeao-titulo">E A CAMPEÃ(O) É...</div>
-    <!-- mascote chef do campeão (vídeo) -->
+    <div class="campeao-titulo">🏆 CAMPEÃ(O) 🏆</div>
+
+    <!-- mascote chef do campeão (vídeo) — PROTAGONISTA, grande -->
     <div class="boneco-slot" id="boneco-slot">
       <video id="mascote-video" class="mascote-campeao" playsinline
-             onerror="this.style.display='none'">
+             onerror="this.parentElement.style.display='none'">
         <source src="mascote.mp4" type="video/mp4">
       </video>
     </div>
-    <img id="campeao-foto" class="campeao-foto" alt="">
+
     <div id="campeao-nome" class="campeao-nome"></div>
     <div id="campeao-autor" class="campeao-autor"></div>
+    <img id="campeao-foto" class="campeao-foto" alt="">
     <div id="campeao-nota" class="campeao-nota"></div>
+
+    <!-- pódio 2º e 3º -->
+    <div id="podio" class="podio"></div>
+
     <button id="campeao-fechar" class="btn btn-dourado" style="max-width:280px;margin:18px auto 0">Fechar 🎉</button>
   </div>
 </div>

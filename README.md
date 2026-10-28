@@ -1,30 +1,32 @@
-# 🏆 Troféu "Melhor Sobremesa 2026"
+# 🍰 Melhor Sobremesa — Competição da Família
 
-Troféu para a competição de sobremesas em família 🍰🎩🍴
+Projeto da competição de sobremesas de fim de ano: **votação** + **troféu 3D** + **mascote chef**.
 
-Estilo: **chapéu de chef (toque) + garfo e faca cruzados + porta-retrato** para
-colocar uma foto do casal / da família.
+## 📁 O que tem aqui
 
-## Arquivos
+### 1. `votacao/` — Versão LINK (celular + PC, idêntica) ⭐
+Roda **direto no navegador**, sem instalar nada. Serve tanto no **celular** quanto no **PC**
+(layout responsivo — a mesma aplicação se adapta à tela).
 
-| Arquivo | O que é |
-|---------|---------|
-| `trofeu_melhor_sobremesa_bin.stl` | **Modelo 3D (use este no celular)** — leve, abre rápido |
-| `trofeu_melhor_sobremesa.stl` | Mesmo modelo em texto (ASCII) — backup |
-| `trofeu_melhor_sobremesa.scad` | Versão caprichada em OpenSCAD (para imprimir com acabamento bonito, no PC) |
-| `gerar_stl.py` | Script que gerou o STL (Python puro) |
+**Abra por aqui:** https://bazilice69.github.io/votacaosobremesa/votacao/
 
-## 📱 Como ver no celular
+- Inscrever (Sozinho 🧑 ou Dupla/Casal 💑) com foto
+- Votar por 4 critérios (Sabor, Textura, Aparência, Criatividade — 1 a 5 ⭐)
+- Ranking + **coroação com o mascote em vídeo**, pódio 🥇🥈🥉, confete e **som de fanfarra**
+- Hall da Fama (campeões por ano)
+- *Dados ficam no próprio aparelho — ideal: 1 aparelho oficial que passa de mão.*
 
-1. Baixe o arquivo `trofeu_melhor_sobremesa_bin.stl` (botão de download aqui no GitHub).
-2. Abra um visualizador online e envie o arquivo:
-   - https://www.viewstl.com/
-   - https://imagetostl.com/view-stl-online
-3. Ou jogue o `.stl` no seu **Google Drive** — ele mostra o modelo girando em 3D.
+### 2. `votacao-rede/` — Versão REDE LOCAL (cada um no seu celular)
+Roda num **notebook** com Node.js. Todos na mesma Wi-Fi votam no próprio celular e a
+**TV abre um link** com o ranking ao vivo. Veja o `README` dentro da pasta.
 
-## 🖨️ Como imprimir
+### 3. Troféu 3D
+- `trofeu_melhor_sobremesa.scad` — modelo paramétrico (OpenSCAD)
+- `trofeu_melhor_sobremesa_bin.stl` — pronto para visualizar/imprimir
 
-- Para acabamento bonito: abra o `.scad` no [OpenSCAD](https://openscad.org) (PC),
-  aperte **F6** e exporte em **Arquivo → Exportar → STL**.
-- Abra o `.stl` no seu fatiador (Cura, PrusaSlicer, Bambu Studio) e imprima.
-- O porta-retrato tem uma fenda no topo: recorte uma foto de **55 × 42 mm** e deslize para dentro.
+## 🎬 Mascote
+O chef campeão (`mascote.mp4`) aparece **grande**, falando, no momento da coroação.
+
+## Qual versão usar?
+- **Testar / festa simples** → versão LINK (`votacao/`)
+- **Cada um no próprio celular, com TV ao vivo** → versão REDE LOCAL (`votacao-rede/`) no notebook

@@ -439,12 +439,14 @@ function telaRanking(){
 /* ==================================================================
    ENCERRAR -> animação de campeão + salva no Hall da Fama
    ================================================================== */
+let rankGuardado=[];   // ranking no momento do encerramento (p/ pódio)
+
 function encerrarVotacao(){
   if(estado.votos.length===0){ aviso("Ainda não há votos para apurar."); return; }
   const rank=calcularRanking();
   const campeao=rank[0];
   if(!campeao || campeao.media<=0){ aviso("Ainda não há notas suficientes."); return; }
-  mostrarCampeao(campeao);
+  rankGuardado=rank;
 
   // salva no Hall da Fama (um registro por ano; atualiza se reencerrar)
   const reg={
@@ -459,6 +461,14 @@ function encerrarVotacao(){
   const i=estado.hall.findIndex(h=>h.ano===estado.ano);
   if(i>=0) estado.hall[i]=reg; else estado.hall.push(reg);
   salvar();
+
+  // mostra a tela de SUSPENSE; o clique no botão revela (e libera o som)
+  const rv=document.getElementById("revelar-overlay");
+  rv.classList.remove("escondido");
+  document.getElementById("btn-revelar").onclick=()=>{
+    rv.classList.add("escondido");
+    mostrarCampeao(campeao);
+  };
 }
 
 function mostrarCampeao(c){
@@ -468,8 +478,23 @@ function mostrarCampeao(c){
   document.getElementById("campeao-nome").textContent = c.nome;
   document.getElementById("campeao-autor").textContent = "por "+nomesDe(c)+(c.crianca?" 👶":"");
   document.getElementById("campeao-nota").textContent = "Nota "+c.media.toFixed(2)+" ⭐";
+
+  // pódio 2º e 3º
+  const podio=document.getElementById("podio");
+  const medalhas=["","🥈","🥉"];
+  podio.innerHTML = rankGuardado.slice(1,3)
+    .filter(r=>r.media>0)
+    .map((r,i)=>`<div class="podio-item">
+      <div class="podio-medalha">${medalhas[i+1]}</div>
+      <div class="podio-nome">${esc(r.nome)}</div>
+      <div class="podio-autor">${esc(nomesDe(r))}</div>
+      <div class="podio-nota">${r.media.toFixed(2)} ⭐</div>
+    </div>`).join("");
+
   ov.classList.remove("escondido");
   chuvaConfete();
+  tocarFanfarra();   // som de aplauso/fanfarra sintetizado
+
   const v=document.getElementById("mascote-video");
   if(v){ try{
     v.muted=false; v.volume=1.0; v.currentTime=0; v.loop=false;
@@ -479,6 +504,26 @@ function mostrarCampeao(c){
     ov.classList.add("escondido");
     if(v){ try{ v.pause(); }catch(e){} }
   };
+}
+
+/* fanfarra/acorde de vitória usando Web Audio (sem arquivo de som) */
+function tocarFanfarra(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return;
+    const ac=new AC();
+    const notas=[523.25,659.25,783.99,1046.50]; // dó-mi-sol-dó (acorde subindo)
+    notas.forEach((f,i)=>{
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.type="triangle"; o.frequency.value=f;
+      o.connect(g); g.connect(ac.destination);
+      const t=ac.currentTime+i*0.12;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(0.25,t+0.03);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.8);
+      o.start(t); o.stop(t+0.85);
+    });
+  }catch(e){}
 }
 
 function chuvaConfete(){
