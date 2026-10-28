@@ -129,6 +129,12 @@ function api(req,res,rota){
       if(dados.fase==="encerrado") return json(res,{erro:"Competição encerrada."},400);
       const { participante, participante2, nome, foto, crianca } = body||{};
       if(!participante || !nome) return json(res,{erro:"Nome e sobremesa são obrigatórios."},400);
+      // evita participante repetido (senão a sobremesa some na votação dessa pessoa)
+      const nl=n=>String(n||"").trim().toLowerCase();
+      const novos=[participante, participante2].filter(Boolean).map(nl);
+      const dup=dados.sobremesas.find(x=>
+        novos.includes(nl(x.participante)) || (x.participante2 && novos.includes(nl(x.participante2))));
+      if(dup) return json(res,{erro:`Já existe sobremesa com o participante "${dup.participante}". Cada pessoa inscreve só uma — use outro nome se for outra pessoa.`},400);
       const s={ id:id(), participante:String(participante).slice(0,60),
                 participante2:String(participante2||"").slice(0,60),
                 nome:String(nome).slice(0,80), foto:foto||"", crianca:!!crianca };

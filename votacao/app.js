@@ -100,7 +100,7 @@ function telaCadastrar(){
       </div>
 
       <label id="lbl-part">Nome</label>
-      <input type="text" id="c-part" placeholder="Ex.: João" autocomplete="off">
+      <input type="text" id="c-part" placeholder="Ex.: João" autocomplete="off" value="">
 
       <div id="box-part2" style="display:none">
         <label>Nome da 2ª pessoa</label>
@@ -160,6 +160,14 @@ function telaCadastrar(){
     if(!part){ aviso(tipo==="dupla"?"Digite o nome da 1ª pessoa.":"Digite o nome."); return; }
     if(tipo==="dupla" && !part2){ aviso("Digite o nome da 2ª pessoa (ou mude para Sozinho)."); return; }
     if(!nome){ aviso("Digite o nome da sobremesa."); return; }
+    // evita participante repetido (senão a sobremesa some na votação dessa pessoa)
+    const nomesNovos=[part, part2].filter(Boolean).map(norm);
+    const repetido=estado.sobremesas.find(s=>
+      nomesNovos.includes(norm(s.participante)) || (s.participante2 && nomesNovos.includes(norm(s.participante2))));
+    if(repetido){
+      aviso(`Já existe uma sobremesa inscrita com esse nome de participante ("${esc(repetido.participante)}"). Cada pessoa só pode inscrever UMA sobremesa — use um nome diferente se for outra pessoa.`);
+      return;
+    }
     estado.sobremesas.push({ id:id(), participante:part, participante2:part2, nome, foto:fotoData, crianca });
     salvar();
     aviso(`Sobremesa "${esc(nome)}" inscrita! 🎉`,()=>render());
@@ -253,6 +261,8 @@ function telaVotar(){
   }
 
   // sobremesas que ESTE votante pode avaliar (exclui a própria — considera casal)
+  const minhas = estado.sobremesas.filter(s=>
+    norm(s.participante)===norm(votanteAtual) || norm(s.participante2)===norm(votanteAtual));
   const votaveis = estado.sobremesas.filter(s=>
     norm(s.participante)!==norm(votanteAtual) && norm(s.participante2)!==norm(votanteAtual));
 
@@ -265,10 +275,15 @@ function telaVotar(){
     return;
   }
 
+  // aviso explicando qual sobremesa está escondida (a do próprio votante)
+  const avisoPropria = minhas.length
+    ? `<div class="aviso-fase">🚫 A sua sobremesa (<b>${minhas.map(s=>esc(s.nome)).join(", ")}</b>) não aparece aqui porque ninguém vota em si mesmo. Você vota nas <b>${votaveis.length}</b> abaixo. 😉</div>`
+    : `<p class="dica">Dê de 1 a 5 ⭐ em cada critério. Aparecem <b>${votaveis.length}</b> sobremesa(s).</p>`;
+
   const cards=votaveis.map(cardVoto).join("");
   app.innerHTML=`
     <h2 class="titulo">Olá, ${esc(votanteAtual)}! 👋</h2>
-    <p class="dica">Dê de 1 a 5 ⭐ em cada critério.</p>
+    ${avisoPropria}
     ${cards}
     <button class="btn btn-verde" id="btn-enviar">Enviar meu voto ✅</button>
     <button class="btn btn-cinza" id="btn-trocar-nome">Trocar de votante</button>
@@ -466,9 +481,21 @@ function encerrarVotacao(){
   const rv=document.getElementById("revelar-overlay");
   rv.classList.remove("escondido");
   document.getElementById("btn-revelar").onclick=()=>{
+    destravarAudio();          // ESTE clique libera o som no navegador/celular
     rv.classList.add("escondido");
     mostrarCampeao(campeao);
   };
+}
+
+/* AudioContext global, destravado no primeiro clique do usuário */
+let _audioCtx=null;
+function destravarAudio(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return;
+    if(!_audioCtx) _audioCtx=new AC();
+    if(_audioCtx.state==="suspended") _audioCtx.resume();
+  }catch(e){}
 }
 
 function mostrarCampeao(c){
@@ -506,24 +533,30 @@ function mostrarCampeao(c){
   };
 }
 
-/* fanfarra/acorde de vitória usando Web Audio (sem arquivo de som) */
+/* fanfarra de vitória usando Web Audio (sem arquivo de som) */
 function tocarFanfarra(){
   try{
-    const AC=window.AudioContext||window.webkitAudioContext;
-    if(!AC) return;
-    const ac=new AC();
-    const notas=[523.25,659.25,783.99,1046.50]; // dó-mi-sol-dó (acorde subindo)
-    notas.forEach((f,i)=>{
-      const o=ac.createOscillator(), g=ac.createGain();
-      o.type="triangle"; o.frequency.value=f;
-      o.connect(g); g.connect(ac.destination);
-      const t=ac.currentTime+i*0.12;
-      g.gain.setValueAtTime(0,t);
-      g.gain.linearRampToValueAtTime(0.25,t+0.03);
-      g.gain.exponentialRampToValueAtTime(0.001,t+0.8);
-      o.start(t); o.stop(t+0.85);
-    });
+    destravarAudio();
+    const ac=_audioCtx;
+    if(!ac) return;
+    const t0=ac.currentTime+0.02;
+    // arpejo subindo (dó-mi-sol-dó) + acorde final sustentado
+    const arpejo=[523.25,659.25,783.99,1046.50];
+    arpejo.forEach((f,i)=>tocaNota(ac,f,t0+i*0.13,0.5,0.22,"triangle"));
+    // acorde final triunfal
+    [523.25,659.25,783.99].forEach(f=>tocaNota(ac,f,t0+0.13*4,1.1,0.18,"sawtooth"));
+    // "brilho" agudo final
+    tocaNota(ac,1568,t0+0.13*4+0.05,1.0,0.12,"sine");
   }catch(e){}
+}
+function tocaNota(ac,freq,t,dur,vol,tipo){
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.type=tipo||"triangle"; o.frequency.value=freq;
+  o.connect(g); g.connect(ac.destination);
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+0.03);
+  g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  o.start(t); o.stop(t+dur+0.05);
 }
 
 function chuvaConfete(){

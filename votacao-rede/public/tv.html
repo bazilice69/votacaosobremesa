@@ -127,10 +127,41 @@ async function tick(){
 
 // Botão REVELAR: este clique libera o navegador/TV a tocar o vídeo COM SOM
 document.getElementById("btn-revelar").onclick=()=>{
+  destravarAudio();
   jaRevelou=true;
   document.getElementById("revelar").classList.add("off");
   mostrarCampeao(campeaoCache);
+  tocarFanfarra();
 };
+
+/* AudioContext global + fanfarra (igual à versão do link) */
+let _audioCtx=null;
+function destravarAudio(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return;
+    if(!_audioCtx) _audioCtx=new AC();
+    if(_audioCtx.state==="suspended") _audioCtx.resume();
+  }catch(e){}
+}
+function tocaNota(ac,freq,t,dur,vol,tipo){
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.type=tipo||"triangle"; o.frequency.value=freq;
+  o.connect(g); g.connect(ac.destination);
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+0.03);
+  g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  o.start(t); o.stop(t+dur+0.05);
+}
+function tocarFanfarra(){
+  try{
+    destravarAudio(); const ac=_audioCtx; if(!ac) return;
+    const t0=ac.currentTime+0.02;
+    [523.25,659.25,783.99,1046.50].forEach((f,i)=>tocaNota(ac,f,t0+i*0.13,0.5,0.22,"triangle"));
+    [523.25,659.25,783.99].forEach(f=>tocaNota(ac,f,t0+0.13*4,1.1,0.18,"sawtooth"));
+    tocaNota(ac,1568,t0+0.13*4+0.05,1.0,0.12,"sine");
+  }catch(e){}
+}
 
 function pintar(e){
   const rank=e.ranking;

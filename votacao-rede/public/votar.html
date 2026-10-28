@@ -63,7 +63,7 @@ function telaInscrever(){
     <p class="dica">Seu nome + nome da sobremesa + foto. Crianças também! 👶</p>
     <div class="card">
       <label>Seu nome</label>
-      <input type="text" id="c-part" placeholder="Ex.: Thiago" value="${esc(meuNome)}">
+      <input type="text" id="c-part" placeholder="Ex.: Thiago" value="">
       <label>É um casal? Nome da outra pessoa (opcional)</label>
       <input type="text" id="c-part2" placeholder="Ex.: Poliana">
       <p class="dica" style="margin:4px 0 0">Se for casal, os dois ficam bloqueados de votar nesta sobremesa.</p>
@@ -149,14 +149,19 @@ function telaVotar(){
   }
 
   // esconde a sobremesa da pessoa (considerando casal: os dois nomes)
+  const minhas=estado.sobremesas.filter(s=>
+    norm(s.participante)===norm(meuNome) || norm(s.participante2)===norm(meuNome));
   const votaveis=estado.sobremesas.filter(s=>
     norm(s.participante)!==norm(meuNome) && norm(s.participante2)!==norm(meuNome));
   const jaVotou=estado.votantes.some(v=>norm(v)===norm(meuNome));
+  const avisoPropria = minhas.length
+    ? `<div class="aviso-fase">🚫 A sua sobremesa (<b>${minhas.map(s=>esc(s.nome)).join(", ")}</b>) não aparece — ninguém vota em si mesmo. Você vota nas <b>${votaveis.length}</b> abaixo. 😉</div>`
+    : `<p class="dica">Dê de 1 a 5 ⭐ por critério. Aparecem <b>${votaveis.length}</b> sobremesa(s).</p>`;
   notasTemp={};
   sub.innerHTML=`
     <h2 class="titulo">Olá, ${esc(meuNome)}! 👋 <button class="btn btn-cinza btn-sm" id="trocar" style="float:right">trocar</button></h2>
     ${jaVotou?`<div class="aviso-fase">Você já votou. Pode votar de novo que substitui o anterior.</div>`:""}
-    <p class="dica">Dê de 1 a 5 ⭐ por critério. Sua própria sobremesa não aparece aqui.</p>
+    ${avisoPropria}
     ${votaveis.length? votaveis.map(cardVoto).join("") : `<div class="vazio">Só há a sua sobremesa. Espere mais inscrições!</div>`}
     ${votaveis.length?`<button class="btn btn-verde" id="enviar">Enviar meu voto ✅</button>`:""}
   `;
